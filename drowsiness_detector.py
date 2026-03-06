@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+from playsound import playsound
 
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh()
@@ -59,7 +60,7 @@ while True:
             if counter >= CONSEC_FRAMES:
                 cv2.putText(frame, "DROWSINESS ALERT!", (50, 100),
                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-                
+                playsound("alarm.wav")
 
     cv2.imshow("Driver Drowsiness Detection", frame)
 
