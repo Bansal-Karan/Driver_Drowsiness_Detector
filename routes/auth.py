@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from db import users_collection
-from models.user_model import register_schema
-from models.user_model import login_schema
+from models.User_model import register_schema
+from models.User_model import login_schema
 from werkzeug.security import generate_password_hash, check_password_hash
 
 auth = Blueprint('auth', __name__)
