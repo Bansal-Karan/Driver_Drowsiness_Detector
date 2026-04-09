@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import API from "../api";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -20,6 +23,7 @@ function Login() {
 
       // store token (important)
       localStorage.setItem("token", res.data.token);
+      navigate("/dashboard");
 
     } catch (err) {
       alert("Invalid credentials");
