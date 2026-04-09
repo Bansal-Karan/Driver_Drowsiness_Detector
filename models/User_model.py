@@ -3,7 +3,9 @@ def register_schema(data):
         "name": data.get("name"),
         "email": data.get("email"),
         "password": data.get("password"),
-        "isSubscribed": False
+        "isSubscribed": False,
+        "subscriptionStart": None,
+        "subscriptionEnd": None
     }
     
 def login_schema(data):

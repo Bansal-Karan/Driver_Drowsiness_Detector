@@ -21,8 +21,9 @@ function Login() {
       const res = await API.post("/login", form);
       alert(res.data.message);
 
-      // store token (important)
+      // store token and email so payment-success can update the user subscription
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("email", form.email);
       navigate("/dashboard");
 
     } catch (err) {

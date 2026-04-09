@@ -96,7 +96,16 @@ while True:
 
     cv2.imshow("Drowsiness Detection (CNN)", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    key = cv2.waitKey(1) & 0xFF
+
+    # Press 'q' to stop
+    if key == ord("q"):
+        print("Stopped by user (Q pressed)")
+        break
+
+    # Detect if window is closed manually
+    if cv2.getWindowProperty("Drowsiness Detection (CNN)", cv2.WND_PROP_VISIBLE) < 1:
+        print("Window closed by user")
         break
 
 cap.release()

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import API from "../api";
-import {Link} from "react-router-dom"
+import {Link, useNavigate} from "react-router-dom"
 
 function Register() {
   const [form, setForm] = useState({
@@ -12,12 +12,15 @@ function Register() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  
+  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await API.post("/register", form);
       alert(res.data.message);
+      navigate("/")
     } catch (err) {
       alert("Error registering user");
     }

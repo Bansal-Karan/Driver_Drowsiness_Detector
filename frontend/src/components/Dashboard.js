@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -10,6 +11,36 @@ function Dashboard() {
             navigate("/");
         }
     }, [navigate]);
+
+    const activateSubscription = async () => {
+        const email = localStorage.getItem("email");
+
+        if (!email) {
+            alert("Unable to activate subscription: email not found. Please log in again.");
+            return;
+        }
+
+        await fetch("http://127.0.0.1:5000/payment-success", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        alert("Subscription Activated!");
+    };
+
+    const location = useLocation();
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const success = queryParams.get("success");
+
+        if (success === "true") {
+            activateSubscription();
+        }
+    }, [location]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -36,6 +67,30 @@ function Dashboard() {
             console.error(err);
             alert("Error redirecting to payment");
         }
+    };
+
+    const handleUseService = async () => {
+        const email = localStorage.getItem("email");
+
+        const res = await fetch("http://127.0.0.1:5000/check-subscription", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+
+        if (data.access) {
+        await fetch("http://127.0.0.1:5000/start-drowsiness", {
+            method: "POST",
+        });
+
+        alert("Drowsiness Detection Started!");
+    } else {
+        alert("Please subscribe to use this service");
+    }
     };
 
 
@@ -70,6 +125,11 @@ function Dashboard() {
                 onClick={handleSubscribe}
             >
              Subscribe Now
+            </button>
+            
+            {/* Use Service Button */}
+            <button onClick={handleUseService}>
+                Use Drowsiness Detection
             </button>
 
             {/* Logout */}
