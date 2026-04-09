@@ -23,9 +23,8 @@ def register():
 def login():
     data = request.json
     user_data = login_schema(data)
-    check_password_hash(user["password"], user_data["password"])
 
-    user = users_collection.find_one({"username": user_data["username"]})
+    user = users_collection.find_one({"email": user_data["email"]})
 
     if user and check_password_hash(user["password"], user_data["password"]):
         return jsonify({"message": "Login successful"})

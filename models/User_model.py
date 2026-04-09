@@ -1,12 +1,13 @@
 def register_schema(data):
     return {
-        "username": data.get("username"),
+        "name": data.get("name"),
+        "email": data.get("email"),
         "password": data.get("password"),
         "isSubscribed": False
     }
     
 def login_schema(data):
     return {
-        "username": data.get("username"),
+        "email": data.get("email"),
         "password": data.get("password")
     }
