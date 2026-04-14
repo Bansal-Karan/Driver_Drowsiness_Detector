@@ -54,7 +54,6 @@ function Dashboard() {
             });
 
             const data = await res.json();
-            console.log("DATA:", data);
 
             if (!data.url) {
                 alert("Payment error");

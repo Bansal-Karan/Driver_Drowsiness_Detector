@@ -19,7 +19,7 @@ function Register() {
     e.preventDefault();
     try {
       const res = await API.post("/register", form);
-      alert(res.data.message);
+      console.log(res.data.message);
       navigate("/")
     } catch (err) {
       alert("Error registering user");

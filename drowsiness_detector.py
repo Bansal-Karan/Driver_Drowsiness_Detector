@@ -14,7 +14,7 @@ face_mesh = mp_face_mesh.FaceMesh()
 # Left eye landmarks
 LEFT_EYE = [33, 160, 158, 133, 153, 144]
 
-# Right eye landmarks (ADD THIS)
+# Right eye landmarks
 RIGHT_EYE = [362, 385, 387, 263, 373, 380]
 
 # Webcam

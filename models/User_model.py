@@ -13,3 +13,9 @@ def login_schema(data):
         "email": data.get("email"),
         "password": data.get("password")
     }
+    
+def admin_schema(data):
+    return {
+        "email": "admin@gmail.com",
+        "password": "admin123"
+    }

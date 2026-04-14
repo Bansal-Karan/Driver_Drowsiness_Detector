@@ -19,7 +19,7 @@ function Login() {
     e.preventDefault();
     try {
       const res = await API.post("/login", form);
-      alert(res.data.message);
+      console.log(res.data.message);
 
       // store token and email so payment-success can update the user subscription
       localStorage.setItem("token", res.data.token);
@@ -43,6 +43,10 @@ function Login() {
       <p>
         Don't have an account?{" "}
         <Link to="/register">Register here</Link>
+      </p>
+      <p>
+        Are you an admin?{" "}
+        <Link to="/admin-login">Login here</Link>
       </p>
     </div>
   );

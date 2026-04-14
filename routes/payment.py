@@ -40,7 +40,7 @@ def payment_success():
     data = request.json
     email = data.get("email")
     print(data)
-    # find user in DB (pseudo)
+    # find user in DB and update subscription status
     user = users_collection.find_one({"email": email})
 
     if user:
@@ -60,10 +60,6 @@ def payment_success():
 
     return jsonify({"message": "Subscription activated"})
 
-
-from datetime import datetime, timezone
-from flask import request, jsonify
-from db import users_collection
 
 @payment.route("/check-subscription", methods=["POST"])
 def check_subscription():
