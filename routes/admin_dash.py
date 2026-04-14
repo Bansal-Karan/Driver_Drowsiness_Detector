@@ -19,7 +19,7 @@ def admin_dashboard():
     subscribers = list(
         users_collection.find(
             {"isSubscribed": True},
-            {"_id": 0, "name": 1, "email": 1, "subscription_end": 1, "usage_count": 1},
+            {"_id": 0, "name": 1, "email": 1, "subscriptionEnd": 1, "usage_count": 1},
         )
     )
 

@@ -32,6 +32,9 @@ function Login() {
       localStorage.setItem("token", res.data.token || "dummy");
       localStorage.setItem("email", res.data.email);
       localStorage.setItem("name", res.data.name);
+      if (res.data.subscriptionEnd) {
+        localStorage.setItem("subscriptionEnd", res.data.subscriptionEnd);
+      }
       navigate("/dashboard");
     } catch (err) {
       setError("Invalid credentials. Please check your email and password.");

@@ -3,6 +3,7 @@ import stripe
 from flask import Flask, jsonify, Blueprint, request
 from db import users_collection
 from datetime import datetime, timezone, timedelta
+from dateutil.relativedelta import relativedelta
 
 payment = Blueprint('payment', __name__)
 
@@ -45,7 +46,7 @@ def payment_success():
 
     if user:
         start = datetime.now(timezone.utc)
-        end = start + timedelta(days=30)
+        end = start + relativedelta(months=1)
 
         users_collection.update_one(
             {"email": email},
@@ -83,6 +84,26 @@ def check_subscription():
                 return jsonify({"access": True})
 
         return jsonify({"access": False})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@payment.route("/update-expired-subscription", methods=["POST"])
+def update_expired_subscription():
+    """
+    Update subscription status to expired when called from frontend
+    """
+    try:
+        data = request.json
+        email = data.get("email")
+
+        users_collection.update_one(
+            {"email": email},
+            {"$set": {"isSubscribed": False}}
+        )
+
+        return jsonify({"message": "Subscription updated to expired"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

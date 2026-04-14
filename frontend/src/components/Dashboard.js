@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { FaEye, FaBell, FaBrain, FaShieldAlt, FaClock, FaUser, FaSignOutAlt, FaCreditCard, FaPlay } from "react-icons/fa";
+import { FaEye, FaBell, FaBrain, FaShieldAlt, FaClock, FaUser, FaSignOutAlt, FaCreditCard, FaPlay, FaSpinner } from "react-icons/fa";
 
 function Dashboard() {
     const navigate = useNavigate();
     const [userName, setUserName] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [showCamera, setShowCamera] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -14,8 +16,36 @@ function Dashboard() {
             navigate("/");
         } else {
             setUserName(name || "");
+            checkAndUpdateExpiredSubscription();
         }
     }, [navigate]);
+
+    const checkAndUpdateExpiredSubscription = async () => {
+        const email = localStorage.getItem("email");
+        const subscriptionEnd = localStorage.getItem("subscriptionEnd");
+
+        if (!email || !subscriptionEnd) {
+            return;
+        }
+
+        const endDate = new Date(subscriptionEnd);
+        const currentDate = new Date();
+
+        // If subscription has expired, notify backend to update
+        if (currentDate > endDate) {
+            try {
+                await fetch("http://127.0.0.1:5000/update-expired-subscription", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email }),
+                });
+            } catch (err) {
+                console.error("Error updating expired subscription:", err);
+            }
+        }
+    };
 
     const activateSubscription = async () => {
         const email = localStorage.getItem("email");
@@ -50,6 +80,13 @@ function Dashboard() {
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/");
+    };
+
+    const stopCamera = async () => {
+        await fetch("http://127.0.0.1:5000/stop-drowsiness", {
+            method: "POST",
+        });
+        setShowCamera(false);
     };
 
     const handleSubscribe = async () => {
@@ -87,11 +124,12 @@ function Dashboard() {
         const data = await res.json();
 
         if (data.access) {
+            setLoading(true);
             await fetch("http://127.0.0.1:5000/start-drowsiness", {
                 method: "POST",
             });
-
-            alert("Drowsiness Detection Started!");
+            setLoading(false);
+            setShowCamera(true);
         } else {
             alert("Please subscribe to use this service");
         }
@@ -155,10 +193,20 @@ function Dashboard() {
                             </button>
                             <button
                                 onClick={handleUseService}
-                                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                                disabled={loading}
+                                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <FaPlay />
-                                <span>Use Detection Service</span>
+                                {loading ? (
+                                    <>
+                                        <FaSpinner className="animate-spin" />
+                                        <span>Starting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaPlay />
+                                        <span>Use Detection Service</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -181,6 +229,29 @@ function Dashboard() {
                     </div>
                 </div>
             </main>
+
+            {/* Camera Modal */}
+            {showCamera && (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-2xl max-w-4xl w-full mx-4">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Drowsiness Detection Active</h3>
+                        <img
+                            src="http://127.0.0.1:5000/video_feed"
+                            alt="Drowsiness Detection Feed"
+                            className="w-full h-auto rounded-lg border-2 border-gray-300"
+                            style={{ maxHeight: '70vh' }}
+                        />
+                        <div className="flex justify-center mt-4">
+                            <button
+                                onClick={stopCamera}
+                                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition duration-300 ease-in-out"
+                            >
+                                Stop Detection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

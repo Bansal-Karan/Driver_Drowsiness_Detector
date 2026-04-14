@@ -33,6 +33,7 @@ def login():
                 "message": "Login successful",
                 "name": user["name"],
                 "email": user["email"],
+                "subscriptionEnd": user.get("subscriptionEnd"),
             }
         )
     else:

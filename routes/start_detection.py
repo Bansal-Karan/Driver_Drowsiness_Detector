@@ -1,12 +1,24 @@
-import subprocess
-from flask import Blueprint, jsonify
+from flask import Blueprint, Response
+import drowsiness_detector
 
-drowsiness = Blueprint('drowsiness', __name__)
+drowsiness = Blueprint("drowsiness", __name__)
+
 
 @drowsiness.route("/start-drowsiness", methods=["POST"])
 def start_drowsiness():
-    try:
-        subprocess.Popen(["python", "drowsiness_detector.py"])
-        return jsonify({"message": "Drowsiness detection started"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    drowsiness_detector.start_detection()
+    return {"message": "Drowsiness detection started"}
+
+
+@drowsiness.route("/stop-drowsiness", methods=["POST"])
+def stop_drowsiness():
+    drowsiness_detector.stop_detection()
+    return {"message": "Drowsiness detection stopped"}
+
+
+@drowsiness.route("/video_feed")
+def video_feed():
+    return Response(
+        drowsiness_detector.generate(),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )

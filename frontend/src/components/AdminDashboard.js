@@ -122,8 +122,8 @@ const AdminDashboard = () => {
                                         <td className="p-4">{user.name}</td>
                                         <td className="p-4">{user.email}</td>
                                         <td className="p-4">
-                                            {user.subscription_end
-                                                ? new Date(user.subscription_end).toLocaleDateString()
+                                            {user.subscriptionEnd
+                                                ? new Date(user.subscriptionEnd).toLocaleDateString('en-GB')
                                                 : "N/A"}
                                         </td>
                                         <td className="p-4">{user.usage || "N/A"}</td>

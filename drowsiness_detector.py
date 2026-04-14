@@ -3,6 +3,8 @@ import mediapipe as mp
 import numpy as np
 from playsound import playsound
 from tensorflow.keras.models import load_model
+import threading
+import time
 
 # Load trained CNN model
 model = load_model("eye_model.h5")
@@ -17,96 +19,138 @@ LEFT_EYE = [33, 160, 158, 133, 153, 144]
 # Right eye landmarks
 RIGHT_EYE = [362, 385, 387, 263, 373, 380]
 
-# Webcam
-cap = cv2.VideoCapture(0)
+# Global variables
+outputFrame = None
+lock = threading.Lock()
+detection_active = False
 
-# Drowsiness logic
-counter = 0
-CONSEC_FRAMES = 20   # adjust if needed
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+def detect_drowsiness():
+    global outputFrame, lock, detection_active
+    # Webcam
+    cap = cv2.VideoCapture(0)
 
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = face_mesh.process(rgb_frame)
+    # Drowsiness logic
+    counter = 0
+    CONSEC_FRAMES = 20  # adjust if needed
 
-    if results.multi_face_landmarks:
-        for face_landmarks in results.multi_face_landmarks:
+    while detection_active:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-            h, w, _ = frame.shape
-            eye_coords = []
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = face_mesh.process(rgb_frame)
 
-            # Get eye points
-            eyes = [LEFT_EYE, RIGHT_EYE]
-            closed_count = 0
+        if results.multi_face_landmarks:
+            for face_landmarks in results.multi_face_landmarks:
 
-            for eye in eyes:
+                h, w, _ = frame.shape
                 eye_coords = []
 
-                for idx in eye:
-                    x = int(face_landmarks.landmark[idx].x * w)
-                    y = int(face_landmarks.landmark[idx].y * h)
-                    eye_coords.append(np.array([x, y]))
+                # Get eye points
+                eyes = [LEFT_EYE, RIGHT_EYE]
+                closed_count = 0
 
-                    cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
+                for eye in eyes:
+                    eye_coords = []
 
-                # Crop
-                x_min = min([p[0] for p in eye_coords])
-                x_max = max([p[0] for p in eye_coords])
-                y_min = min([p[1] for p in eye_coords])
-                y_max = max([p[1] for p in eye_coords])
+                    for idx in eye:
+                        x = int(face_landmarks.landmark[idx].x * w)
+                        y = int(face_landmarks.landmark[idx].y * h)
+                        eye_coords.append(np.array([x, y]))
 
-                eye_crop = frame[y_min:y_max, x_min:x_max]
+                        cv2.circle(frame, (x, y), 2, (0, 255, 0), -1)
 
-                if eye_crop.size == 0:
-                    continue
+                    # Crop
+                    x_min = min([p[0] for p in eye_coords])
+                    x_max = max([p[0] for p in eye_coords])
+                    y_min = min([p[1] for p in eye_coords])
+                    y_max = max([p[1] for p in eye_coords])
 
-                # Preprocess
-                eye_crop = cv2.resize(eye_crop, (24, 24))
-                eye_crop = cv2.cvtColor(eye_crop, cv2.COLOR_BGR2GRAY)
-                eye_crop = eye_crop / 255.0
-                eye_crop = eye_crop.reshape(1, 24, 24, 1)
+                    eye_crop = frame[y_min:y_max, x_min:x_max]
 
-                # Predict
-                prediction = model.predict(eye_crop, verbose=0)
+                    if eye_crop.size == 0:
+                        continue
 
-                if prediction > 0.7:
-                    closed_count += 1
+                    # Preprocess
+                    eye_crop = cv2.resize(eye_crop, (24, 24))
+                    eye_crop = cv2.cvtColor(eye_crop, cv2.COLOR_BGR2GRAY)
+                    eye_crop = eye_crop / 255.0
+                    eye_crop = eye_crop.reshape(1, 24, 24, 1)
 
-            # Final decision
-            if closed_count == 2:
-                counter += 1
-                status = "Closed"
-            else:
-                counter = 0
-                status = "Open"
+                    # Predict
+                    prediction = model.predict(eye_crop, verbose=0)
 
-            # display status
-            cv2.putText(frame, f"Eye: {status}", (30, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                    if prediction > 0.7:
+                        closed_count += 1
 
-            # ---- ALERT ----
-            if counter >= CONSEC_FRAMES:
-                cv2.putText(frame, "DROWSINESS ALERT!", (50, 100),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+                # Final decision
+                if closed_count == 2:
+                    counter += 1
+                    status = "Closed"
+                else:
+                    counter = 0
+                    status = "Open"
 
-                playsound("alarm.wav")
+                # display status
+                cv2.putText(
+                    frame,
+                    f"Eye: {status}",
+                    (30, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (255, 0, 0),
+                    2,
+                )
 
-    cv2.imshow("Drowsiness Detection (CNN)", frame)
+                # ---- ALERT ----
+                if counter >= CONSEC_FRAMES:
+                    cv2.putText(
+                        frame,
+                        "DROWSINESS ALERT!",
+                        (50, 100),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        1,
+                        (0, 0, 255),
+                        3,
+                    )
 
-    key = cv2.waitKey(1) & 0xFF
+                    playsound("alarm.wav")
 
-    # Press 'q' to stop
-    if key == ord("q"):
-        print("Stopped by user (Q pressed)")
-        break
+        with lock:
+            outputFrame = frame.copy()
 
-    # Detect if window is closed manually
-    if cv2.getWindowProperty("Drowsiness Detection (CNN)", cv2.WND_PROP_VISIBLE) < 1:
-        print("Window closed by user")
-        break
+        time.sleep(0.1)  # small delay
 
-cap.release()
-cv2.destroyAllWindows()
+    cap.release()
+
+
+def generate():
+    global outputFrame, lock
+    while detection_active:
+        with lock:
+            if outputFrame is None:
+                continue
+            (flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
+            if not flag:
+                continue
+        yield (
+            b"--frame\r\n"
+            b"Content-Type: image/jpeg\r\n\r\n" + bytearray(encodedImage) + b"\r\n"
+        )
+        time.sleep(0.1)
+
+
+def start_detection():
+    global detection_active
+    if not detection_active:
+        detection_active = True
+        t = threading.Thread(target=detect_drowsiness)
+        t.daemon = True
+        t.start()
+
+
+def stop_detection():
+    global detection_active
+    detection_active = False
